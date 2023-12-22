@@ -71,14 +71,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Библиотека'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              showRegistrationDialog();
-            },
-            child: Text('Добавить читателя'),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -124,31 +116,24 @@ class _MyHomePageState extends State<MyHomePage> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                        ElevatedButton(
-                          onPressed: () {
-                              showBorrowDialog(book);
-                          },
-                          child: Text('+Читатель'),
-                        ),
                       ElevatedButton(
                         onPressed: () {
-                          returnBook(book, readers as Reader);
+                          showReadersListDialog(book);
                         },
-                        style:
-                            ElevatedButton.styleFrom(primary: Colors.green),
-                        child: Text('Возврат'),
+                        child: Text('Список читателей'),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
+                      SizedBox(width: 8), // Пространство между кнопками
+                      ElevatedButton(
                         onPressed: () {
-                          removeBook(book.id);
+                          showBorrowDialog(book);
                         },
+                        child: Text('+Читатель'),
                       ),
                     ],
                   ),
                 );
               },
-            ),
+            )
           ),
         ],
       ),
@@ -233,6 +218,56 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  void showReadersListDialog(Book book) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Список читателей для "${book.title}"'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (book.borrowers.isEmpty)
+                Text('У этой книги нет читателей.')
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: book.borrowers.map((reader) {
+                    return ListTile(
+                      title: Text('${reader.firstName} ${reader.lastName}'),
+                      trailing: ElevatedButton(
+                        onPressed: () {
+                          removeReaderFromBook(book, reader);
+                        },
+                        style: ElevatedButton.styleFrom(primary: Colors.red),
+                        child: Text('Возврат'),
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Закрыть'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void removeReaderFromBook(Book book, Reader reader) {
+    setState(() {
+      book.borrowers.remove(reader);
+    });
+    Navigator.of(context).pop(); // Закрываем диалоговое окно после удаления
+  }
+
+
   void filterLibraryByCategory(String category) {
     setState(() {
       if (category.isEmpty) {
@@ -244,48 +279,6 @@ class _MyHomePageState extends State<MyHomePage> {
             .toList();
       }
     });
-  }
-
-  void showRegistrationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Регистрация читателя'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: TextEditingController(),
-                decoration: InputDecoration(labelText: 'Имя'),
-              ),
-              TextField(
-                controller: TextEditingController(),
-                decoration: InputDecoration(labelText: 'Фамилия'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Отмена'),
-            ),
-            TextButton(
-              onPressed: () {
-                final firstName = '';
-                final lastName = '';
-                final newId = readers.length + 1;
-                addReader(newId, firstName, lastName);
-                Navigator.of(context).pop();
-              },
-              child: Text('Зарегистрировать'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void borrowBook(Book book, Reader reader) {
@@ -301,7 +294,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void showBorrowDialog(Book book) {
-     Reader? selected = Reader(0, "", "");
+    final TextEditingController firstNameController = TextEditingController();
+    final TextEditingController lastNameController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -311,21 +306,13 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text('Книга: ${book.title}'),
-              DropdownButton<Reader>(
-                onChanged: (Reader? reader) {
-                  setState(() {
-                    selected = reader;
-                    selectedReader = reader;
-                  });
-                },
-                value: selected, // Устанавливаем текущее значение
-                items: readers.map<DropdownMenuItem<Reader>>((Reader reader) {
-                  return DropdownMenuItem<Reader>(
-                    value: reader,
-                    child: Text('${reader.firstName} ${reader.lastName}'),
-                  );
-                }).toList(),
-                hint: Text('Выберите читателя'),
+              TextField(
+                controller: firstNameController,
+                decoration: InputDecoration(labelText: 'Имя читателя'),
+              ),
+              TextField(
+                controller: lastNameController,
+                decoration: InputDecoration(labelText: 'Фамилия читателя'),
               ),
             ],
           ),
@@ -338,10 +325,13 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             TextButton(
               onPressed: () {
-                if (selectedReader != null) {
-                  borrowBook(book, selectedReader!);
-                  Navigator.of(context).pop();
-                }
+                final firstName = firstNameController.text;
+                final lastName = lastNameController.text;
+                final newReaderId = readers.length + 1;
+                addReader(newReaderId, firstName, lastName);
+                final newReader = Reader(newReaderId, firstName, lastName);
+                borrowBook(book, newReader);
+                Navigator.of(context).pop();
               },
               child: Text('Выдать'),
             ),
