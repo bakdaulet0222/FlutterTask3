@@ -1,26 +1,10 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
+import 'book.dart';
+import 'reader.dart';
 
 void main() {
   runApp(MyApp());
-}
-
-class Book {
-  final int id;
-  final String title;
-  final String author;
-  final String category;
-  final List<Reader> borrowers;
-
-  Book(this.id, this.title, this.author, this.category, this.borrowers);
-}
-
-class Reader {
-  final int id;
-  final String firstName;
-  final String lastName;
-
-  Reader(this.id, this.firstName, this.lastName);
 }
 
 class MyApp extends StatelessWidget {
@@ -106,34 +90,34 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: filteredLibrary.length,
-              itemBuilder: (context, index) {
-                final book = filteredLibrary[index];
-                return ListTile(
-                  title: Text(book.title),
-                  subtitle: Text('${book.author} (${book.category})'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          showReadersListDialog(book);
-                        },
-                        child: Text('Список читателей'),
-                      ),
-                      SizedBox(width: 8), // Пространство между кнопками
-                      ElevatedButton(
-                        onPressed: () {
-                          showBorrowDialog(book);
-                        },
-                        child: Text('+Читатель'),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            )
+              child: ListView.builder(
+                itemCount: filteredLibrary.length,
+                itemBuilder: (context, index) {
+                  final book = filteredLibrary[index];
+                  return ListTile(
+                    title: Text(book.title),
+                    subtitle: Text('${book.author} (${book.category})'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            showBorrowDialog(book);
+                          },
+                          child: Text('+Читатель'),
+                        ),
+                        SizedBox(width: 8), // Пространство между кнопками
+                        GestureDetector(
+                          onTap: () {
+                            showReadersListDialog(book);
+                          },
+                          child: Icon(Icons.arrow_drop_down),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              )
           ),
         ],
       ),
@@ -260,14 +244,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void removeReaderFromBook(Book book, Reader reader) {
-    setState(() {
-      book.borrowers.remove(reader);
-    });
-    Navigator.of(context).pop(); // Закрываем диалоговое окно после удаления
-  }
-
-
   void filterLibraryByCategory(String category) {
     setState(() {
       if (category.isEmpty) {
@@ -278,18 +254,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 book.category.toLowerCase().contains(category.toLowerCase()))
             .toList();
       }
-    });
-  }
-
-  void borrowBook(Book book, Reader reader) {
-    setState(() {
-      book.borrowers.add(reader);
-    });
-  }
-
-  void returnBook(Book book, Reader reader) {
-    setState(() {
-      book.borrowers.remove(reader);
     });
   }
 
@@ -329,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 final lastName = lastNameController.text;
                 final newReaderId = readers.length + 1;
                 addReader(newReaderId, firstName, lastName);
-                final newReader = Reader(newReaderId, firstName, lastName);
+                final newReader = Reader(newReaderId, firstName, lastName); // Используйте класс Reader из main.dart
                 borrowBook(book, newReader);
                 Navigator.of(context).pop();
               },
@@ -341,10 +305,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void addReader(int id, String firstName, String lastName) {
-    final reader = Reader(id, firstName, lastName);
-    setState(() {
-      readers.add(reader);
-    });
-  }
 }
