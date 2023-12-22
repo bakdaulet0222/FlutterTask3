@@ -40,7 +40,11 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final Map<int, Book> library = {};
   List<Book> filteredLibrary = [];
-  final List<Reader> readers = [];
+  final List<Reader> readers = [
+    Reader(1, "Иван ", "Петров"),
+    Reader(2, "Анна ", "Сидорова"),
+    Reader(3, "Михаил ", "Иванов"),
+  ];
   late final Reader? selectedReader;
   final TextEditingController searchController = TextEditingController();
   final TextEditingController addTitleController = TextEditingController();
@@ -72,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onPressed: () {
               showRegistrationDialog();
             },
-            child: Text('Регистрация'),
+            child: Text('Добавить читателя'),
           ),
         ],
       ),
@@ -122,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                         ElevatedButton(
                           onPressed: () {
-                              showBorrowDialog(book, selectedReader!);
+                              showBorrowDialog(book);
                           },
                           child: Text('+Читатель'),
                         ),
@@ -296,7 +300,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void showBorrowDialog(Book book, Reader selectedReader) {
+  void showBorrowDialog(Book book) {
+     Reader? selected = Reader(0, "", "");
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -307,12 +312,13 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               Text('Книга: ${book.title}'),
               DropdownButton<Reader>(
-                value: selectedReader,
                 onChanged: (Reader? reader) {
                   setState(() {
-                    selectedReader = reader!;
+                    selected = reader;
+                    selectedReader = reader;
                   });
                 },
+                value: selected, // Устанавливаем текущее значение
                 items: readers.map<DropdownMenuItem<Reader>>((Reader reader) {
                   return DropdownMenuItem<Reader>(
                     value: reader,
